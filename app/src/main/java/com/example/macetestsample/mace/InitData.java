@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.example.macetestsample.result;
+package com.example.macetestsample.mace;
 
 import android.os.Environment;
 import android.util.Log;

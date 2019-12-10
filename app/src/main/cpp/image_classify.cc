@@ -84,6 +84,30 @@ MaceContext& GetMaceContext() {
   return *mace_context;
 }
 
+std::vector<MaceContext*>& GetMaceContexts() {
+  //static std::vector<MaceContext*> mace_contexts;
+  
+  //return mace_contexts;
+  
+  static std::vector<MaceContext*> *mace_contexts
+      = new std::vector<MaceContext*>;
+  
+  return *mace_contexts;
+}
+
+MaceContext& AddMaceContext() {
+
+  std::vector<MaceContext*> &mace_contexts = GetMaceContexts();
+  MaceContext &main_mace_context = GetMaceContext();
+  
+  mace_contexts.push_back(new MaceContext);
+  MaceContext &context = *(mace_contexts.back());
+  // Share the same GPU context with main context
+  context.gpu_context = main_mace_context.gpu_context;
+  
+  return context;
+}
+
 }  // namespace
 
 JNIEXPORT jint JNICALL
@@ -109,7 +133,8 @@ Java_com_xiaomi_mace_JniMaceUtils_maceCreateEngine(
     JNIEnv *env, jclass thisObj, jint omp_num_threads, jint cpu_affinity_policy,
     jint gpu_perf_hint, jint gpu_priority_hint,
     jstring model_name_str, jstring model_data_name_str, jstring device) {
-  MaceContext &mace_context = GetMaceContext();
+  //MaceContext &mace_context = GetMaceContext();
+  MaceContext &mace_context = AddMaceContext();
 
   // get device
   const char *device_ptr = env->GetStringUTFChars(device, nullptr);
@@ -240,15 +265,91 @@ Java_com_xiaomi_mace_JniMaceUtils_maceCreateEngine(
                       "image_classify attrs",
                       "create result: %s",
                       create_engine_status.information().c_str());
+                      
+  //unmapFileMapper(mace_context.model_fm);
+  //unmapFileMapper(mace_context.model_data_fm);
   
   return create_engine_status == mace::MaceStatus::MACE_SUCCESS ?
-         JNI_OK : JNI_ERR;
+         GetMaceContexts().size() : JNI_ERR;
 }
 
 JNIEXPORT jfloatArray JNICALL
 Java_com_xiaomi_mace_JniMaceUtils_maceClassify(
     JNIEnv *env, jclass thisObj, jfloatArray input_data) {
   MaceContext &mace_context = GetMaceContext();
+  //  prepare input and output
+  auto model_info_iter =
+      mace_context.model_infos.find(mace_context.model_name);
+  if (model_info_iter == mace_context.model_infos.end()) {
+    __android_log_print(ANDROID_LOG_ERROR,
+                        "image_classify",
+                        "Invalid model name: %s",
+                        mace_context.model_name.c_str());
+    return nullptr;
+  }
+  const ModelInfo &model_info = model_info_iter->second;
+  const std::string &input_name = model_info.input_name;
+  const std::string &output_name = model_info.output_name;
+  const std::vector<int64_t> &input_shape = model_info.input_shape;
+  const std::vector<int64_t> &output_shape = model_info.output_shape;
+  const int64_t input_size =
+      std::accumulate(input_shape.begin(), input_shape.end(), 1,
+                      std::multiplies<int64_t>());
+  const int64_t output_size =
+      std::accumulate(output_shape.begin(), output_shape.end(), 1,
+                      std::multiplies<int64_t>());
+
+  //  load input
+  jfloat *input_data_ptr = env->GetFloatArrayElements(input_data, nullptr);
+  if (input_data_ptr == nullptr) return nullptr;
+  jsize length = env->GetArrayLength(input_data);
+  if (length != input_size) return nullptr;
+
+  std::map<std::string, mace::MaceTensor> inputs;
+  std::map<std::string, mace::MaceTensor> outputs;
+  // construct input
+  auto buffer_in = std::shared_ptr<float>(new float[input_size],
+                                          std::default_delete<float[]>());
+  std::copy_n(input_data_ptr, input_size, buffer_in.get());
+  env->ReleaseFloatArrayElements(input_data, input_data_ptr, 0);
+  inputs[input_name] = mace::MaceTensor(input_shape, buffer_in);
+
+  // construct output
+  auto buffer_out = std::shared_ptr<float>(new float[output_size],
+                                           std::default_delete<float[]>());
+  outputs[output_name] = mace::MaceTensor(output_shape, buffer_out);
+
+  // run model
+  mace_context.engine->Run(inputs, &outputs);
+
+  // transform output
+  jfloatArray jOutputData = env->NewFloatArray(output_size);  // allocate
+  if (jOutputData == nullptr) return nullptr;
+  env->SetFloatArrayRegion(jOutputData, 0, output_size,
+                           outputs[output_name].data().get());  // copy
+
+  return jOutputData;
+}
+
+JNIEXPORT jfloatArray JNICALL
+Java_com_xiaomi_mace_JniMaceUtils_maceModelClassify(
+    JNIEnv *env, jclass thisObj, jint model_index, jfloatArray input_data) {
+  std::vector<MaceContext*> &mace_contexts = GetMaceContexts();
+  if (model_index >= mace_contexts.size()) {
+    __android_log_print(ANDROID_LOG_ERROR,
+                        "image_classify",
+                        "model index >= mace context count");
+    return nullptr;
+  }
+  
+  __android_log_print(ANDROID_LOG_INFO,
+                      "image_classify",
+                      "model index: %d",
+                      model_index);
+                      
+  //return nullptr;
+  
+  MaceContext &mace_context = *(mace_contexts[model_index]);
   //  prepare input and output
   auto model_info_iter =
       mace_context.model_infos.find(mace_context.model_name);

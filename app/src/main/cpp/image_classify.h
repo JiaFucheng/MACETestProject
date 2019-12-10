@@ -49,6 +49,10 @@ Java_com_xiaomi_mace_JniMaceUtils_maceCreateEngine
 JNIEXPORT jfloatArray JNICALL
 Java_com_xiaomi_mace_JniMaceUtils_maceClassify
   (JNIEnv *, jclass, jfloatArray);
+  
+JNIEXPORT jfloatArray JNICALL
+Java_com_xiaomi_mace_JniMaceUtils_maceModelClassify
+  (JNIEnv *, jclass, jint, jfloatArray);
 
 #ifdef __cplusplus
 }

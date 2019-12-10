@@ -2,8 +2,8 @@ package com.example.macetestsample.tools;
 
 public class Representation {
 
-    public static final int IFRAME   = 0;
-    public static final int MV       = 1;
-    public static final int RESIDUAL = 2;
+    public static final Representation IFRAME   = new Representation();
+    public static final Representation MV       = new Representation();
+    public static final Representation RESIDUAL = new Representation();
 
 }

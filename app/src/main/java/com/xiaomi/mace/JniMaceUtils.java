@@ -32,4 +32,6 @@ public class JniMaceUtils {
 
     public static native float[] maceClassify(float[] input);
 
+    public static native float[] maceModelClassify(int modelIndex, float[] input);
+
 }

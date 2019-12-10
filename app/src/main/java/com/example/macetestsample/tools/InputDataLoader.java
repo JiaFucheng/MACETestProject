@@ -11,7 +11,7 @@ public class InputDataLoader {
 
     private static final String TAG = "InputDataLoader";
 
-    public static float[] loadInputData(String filename, int width, int height, int repre) {
+    public static float[] loadInputData(String filename, int width, int height, Representation repre) {
         try {
             //Log.i(TAG, "Loading input data from file " + filename);
             File file = new File(filename);
@@ -52,11 +52,7 @@ public class InputDataLoader {
         }
     }
 
-    public static float[] randomInputData(int width, int height, int representation) {
-        int channel = 3;
-        if (representation == Representation.MV)
-            channel = 2;
-
+    public static float[] randomInputData(int width, int height, int channel) {
         int[] inputSize = {1, width, height, channel};
         float[] inputData = new float[inputSize[0] * inputSize[1] *
                                       inputSize[2] * inputSize[3]];
@@ -64,6 +60,14 @@ public class InputDataLoader {
         fillRandomData(inputData);
 
         return inputData;
+    }
+    
+    public static float[] randomInputData(int width, int height, Representation representation) {
+        int channel = 3;
+        if (representation == Representation.MV)
+            channel = 2;
+        
+        return randomInputData(width, height, channel);
     }
 
     private static void fillRandomData(float[] input) {
