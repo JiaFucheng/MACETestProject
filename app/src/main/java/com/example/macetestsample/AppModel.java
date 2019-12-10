@@ -73,11 +73,14 @@ public class AppModel {
                 }
 
                 // Create engine
+                long start = System.currentTimeMillis();
                 int result = JniMaceUtils.maceCreateEngine(
                         initData.getOmpNumThreads(), initData.getCpuAffinityPolicy(),
                         initData.getGpuPerfHint(), initData.getGpuPriorityHint(),
                         initData.getModel(), initData.getModelData(), initData.getDevice());
+                long costTime = System.currentTimeMillis() - start;
                 Log.i(TAG, "maceCreateEngine result is " + result);
+                Log.i(TAG, "maceCreateEngine cost time " + costTime + " ms");
 
                 // Handle result
                 if (result == -1) {
