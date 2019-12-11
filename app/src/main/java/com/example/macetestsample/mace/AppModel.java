@@ -36,6 +36,11 @@ public class AppModel {
     }
 
     public static void maceCreateGPUContext(final InitData initData) {
+        File file = new File(initData.getStoragePath());
+        if (!file.exists())
+            file.mkdirs();
+        Log.i(TAG, "maceCreateGPUContext storage path " + initData.getStoragePath());
+
         int result = JniMaceUtils.maceCreateGPUContext(initData.getStoragePath());
         Log.i(TAG, "maceCreateGPUContext result is " + result);
     }
