@@ -62,6 +62,12 @@ struct MaceContext {
           {"input", "dense/BiasAdd", {1, 224, 224, 2}, {1, 101}}},
       {"/storage/emulated/0/mace_workspace/models/tf_resnet18_residual.pb",
           {"input", "dense/BiasAdd", {1, 224, 224, 3}, {1, 101}}},
+      {"/storage/emulated/0/mace_workspace/models/tf_resnet152_hmdb51.pb",
+          {"input", "dense/BiasAdd", {1, 224, 224, 3}, {1, 101}}},
+      {"/storage/emulated/0/mace_workspace/models/tf_resnet18_mv_hmdb51.pb",
+          {"input", "dense/BiasAdd", {1, 224, 224, 2}, {1, 101}}},
+      {"/storage/emulated/0/mace_workspace/models/tf_resnet18_residual_hmdb51.pb",
+          {"input", "dense/BiasAdd", {1, 224, 224, 3}, {1, 101}}},
   };
 };
 
